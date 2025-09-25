@@ -5,7 +5,7 @@ This project predicts future retail store sales using SQL for feature engineerin
 
 ### Skills Demonstrated
 - Advanced SQL for rolling, lag, and aggregate features.
-- Time-series forecasting with Python (Prophet, ARIMA, or LSTM).
+- Time-series forecasting with Python (Prophet, ARIMA, or RandomForestRegressor).
 - Visualization of predictions and errors.
 - Optional: End-to-end deployment with real-time updates.
 
