@@ -16,12 +16,14 @@ Retail chains need accurate sales forecasts to optimize inventory, staffing, and
 - Providing interpretable insights for business decision-making.
 
 ## Dataset
-Source: [Kaggle - Walmart Sales Forecasting](https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data)  
-Features:
-- Store ID, Product ID
-- Date of sale
-- Weekly sales
-- Promotions and holiday indicators
+Source: [UCI Online Retail II](https://archive.ics.uci.edu/ml/datasets/Online+Retail+II)
+
+## Repo Structure
+- `data/` - raw dataset
+- `sql/` - table schemas & feature engineering
+- `notebooks/` - pipeline notebook
+- `scripts/` - training & prediction scripts
+- `visuals/` - plots
 
 ## SQL Feature Engineering
 - Total weekly/monthly sales per store/product.
