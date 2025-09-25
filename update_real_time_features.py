@@ -1,51 +1,78 @@
 """
 update_real_time_features.py
 
-This script simulates updating real-time/rolling features for
-customers in the Online Retail II dataset. Intended for daily
-or streaming feature updates for forecasting models.
+Real-time/daily feature update simulation for UCI Online Retail II dataset.
+Handles:
+- Column name inconsistencies
+- Customer-level aggregations
+- Rolling 7-day and 30-day sales
+- Daily sales aggregation
+- Output CSVs for ML pipelines
 """
 
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-# Load dataset
-df = pd.read_csv("data/online_retail_II.csv")
+# Load Excel dataset
+file_path = "/content/online_retail_II.xlsx"  # Update path if needed
+sheet_name = "Year 2010-2011"
+
+df = pd.read_excel(file_path, sheet_name=sheet_name)
+
+# Strip whitespace from columns
+df.columns = df.columns.str.strip()
+
+# Drop rows with missing CustomerID
 df = df.dropna(subset=['CustomerID'])
+
+# Convert InvoiceDate to datetime
 df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
 
-# Simulate "today" as max invoice date in dataset
-today = df['InvoiceDate'].max().normalize()
+# Compute total sales per row
+df['TotalSales'] = df['Quantity'] * df['UnitPrice']
 
-# Filter last 90 days of transactions for performance
-start_date = today - timedelta(days=90)
+# Simulate "today" as max invoice date
+today = df['InvoiceDate'].max().normalize()
+start_date = today - timedelta(days=90)  # Use last 90 days for rolling features
 df_recent = df[df['InvoiceDate'] >= start_date]
 
-# Feature engineering: customer-level aggregates
+# -----------------------------
+# Customer-level aggregates
+# -----------------------------
 customer_agg = df_recent.groupby('CustomerID').agg(
     total_orders=pd.NamedAgg(column='InvoiceNo', aggfunc=pd.Series.nunique),
-    total_spent=pd.NamedAgg(column='UnitPrice', aggfunc=lambda x: (x*df_recent.loc[x.index,'Quantity']).sum()),
-    avg_order_value=pd.NamedAgg(column='UnitPrice', aggfunc=lambda x: (x*df_recent.loc[x.index,'Quantity']).mean())
+    total_spent=pd.NamedAgg(column='TotalSales', aggfunc='sum'),
+    avg_order_value=pd.NamedAgg(column='TotalSales', aggfunc='mean')
 ).reset_index()
 
-# Rolling features: last 7, 30 days per customer
+# -----------------------------
+# Daily sales per customer
+# -----------------------------
+daily_sales = df_recent.groupby(['CustomerID', df_recent['InvoiceDate'].dt.date])[['TotalSales']].sum()
+daily_sales = daily_sales.rename(columns={'TotalSales':'daily_sales'}).reset_index()
+
+# -----------------------------
+# Rolling features
+# -----------------------------
 df_recent = df_recent.sort_values(['CustomerID', 'InvoiceDate'])
+df_recent['rolling_7d_sales'] = df_recent.groupby('CustomerID')['TotalSales'].apply(
+    lambda x: x.rolling('7d', on=df_recent['InvoiceDate']).sum()
+)
+df_recent['rolling_30d_sales'] = df_recent.groupby('CustomerID')['TotalSales'].apply(
+    lambda x: x.rolling('30d', on=df_recent['InvoiceDate']).sum()
+)
 
-df_recent['rolling_7d_sales'] = df_recent.groupby('CustomerID')['Quantity','UnitPrice'].apply(
-    lambda x: (x['Quantity'] * x['UnitPrice']).rolling(7, min_periods=1).sum()
-).reset_index(level=0, drop=True)
-
-df_recent['rolling_30d_sales'] = df_recent.groupby('CustomerID')['Quantity','UnitPrice'].apply(
-    lambda x: (x['Quantity'] * x['UnitPrice']).rolling(30, min_periods=1).sum()
-).reset_index(level=0, drop=True)
-
+# -----------------------------
 # Save updated features
-customer_agg.to_csv("data/customer_agg_latest.csv", index=False)
+# -----------------------------
+customer_agg.to_csv("customer_agg_latest.csv", index=False)
+daily_sales.to_csv("daily_sales_latest.csv", index=False)
 df_recent[['CustomerID','InvoiceDate','rolling_7d_sales','rolling_30d_sales']].to_csv(
-    "data/customer_rolling_latest.csv", index=False
+    "customer_rolling_latest.csv", index=False
 )
 
 print("Real-time features updated successfully!")
 print("Saved files:")
-print(" - data/customer_agg_latest.csv")
-print(" - data/customer_rolling_latest.csv")
+print(" - customer_agg_latest.csv")
+print(" - daily_sales_latest.csv")
+print(" - customer_rolling_latest.csv")
