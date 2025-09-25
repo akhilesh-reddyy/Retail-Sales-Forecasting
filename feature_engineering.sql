@@ -1,22 +1,29 @@
--- Aggregate total weekly sales per store
-CREATE VIEW store_weekly_sales AS
+-- Total sales per invoice
+CREATE VIEW invoice_sales AS
 SELECT 
-    store_id,
-    EXTRACT(YEAR FROM date) AS year,
-    EXTRACT(WEEK FROM date) AS week,
-    SUM(weekly_sales) AS total_weekly_sales
-FROM sales
-GROUP BY store_id, year, week;
+    InvoiceNo,
+    SUM(Quantity * UnitPrice) AS total_sales
+FROM online_retail
+GROUP BY InvoiceNo;
 
--- Rolling 4-week average per store
-CREATE VIEW store_rolling_avg AS
-SELECT 
-    store_id,
-    week,
-    year,
-    AVG(total_weekly_sales) OVER (
-        PARTITION BY store_id 
-        ORDER BY year, week 
-        ROWS BETWEEN 3 PRECEDING AND CURRENT ROW
-    ) AS rolling_4_week_avg
-FROM store_weekly_sales;
+-- Customer-level aggregation
+CREATE VIEW customer_agg AS
+SELECT
+    CustomerID,
+    COUNT(DISTINCT InvoiceNo) AS total_orders,
+    SUM(Quantity * UnitPrice) AS total_spent,
+    AVG(Quantity * UnitPrice) AS avg_order_value
+FROM online_retail
+GROUP BY CustomerID;
+
+-- Rolling features: last 30 days spending per customer
+CREATE VIEW customer_rolling AS
+SELECT
+    CustomerID,
+    InvoiceDate,
+    SUM(Quantity * UnitPrice) OVER (
+        PARTITION BY CustomerID
+        ORDER BY InvoiceDate
+        ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+    ) AS rolling_30day_sales
+FROM online_retail;
