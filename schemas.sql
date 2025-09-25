@@ -1,10 +1,12 @@
-DROP TABLE IF EXISTS sales;
+DROP TABLE IF EXISTS online_retail;
 
-CREATE TABLE sales (
-    store_id INT,
-    product_id INT,
-    date DATE,
-    weekly_sales FLOAT,
-    is_holiday BOOLEAN,
-    promotion BOOLEAN
+CREATE TABLE online_retail (
+    InvoiceNo VARCHAR(20),
+    StockCode VARCHAR(20),
+    Description VARCHAR(255),
+    Quantity INT,
+    InvoiceDate TIMESTAMP,
+    UnitPrice FLOAT,
+    CustomerID INT,
+    Country VARCHAR(50)
 );
