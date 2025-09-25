@@ -1,15 +1,10 @@
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
 import joblib
 
-# Load features
-X_new = pd.read_csv("data/new_sales_features.csv")
+model = joblib.load('scripts/sales_model.pkl')
 
-# Load trained model
-model = joblib.load("models/rf_sales_model.pkl")
-
-# Make predictions
-predictions = model.predict(X_new)
-X_new["predicted_sales"] = predictions
-X_new.to_csv("data/sales_predictions.csv", index=False)
-print("Predictions saved to data/sales_predictions.csv")
+# Predict on new data
+new_data = pd.read_csv("data/online_retail_II.csv")
+# (apply same preprocessing as train)
+# ...
+predictions = model.predict(new_data[['Quantity','UnitPrice','rolling_7d']])
